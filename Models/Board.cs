@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Models
 {
@@ -12,54 +13,85 @@ namespace Models
         private List<EntityOnTheBoard> _holes;
 
         private Queue<Movement> _movements = new Queue<Movement>();
+        private static bool _solutionFound = false;
 
-        public Board(int size)
+        private Board(Board b)
         {
-            var movements = Enum.GetValues(typeof(Movement)).Cast<Movement>();
+            _balls = b._balls.Select(ball => new Ball(BoardSize) {XPos = ball.XPos, YPos = ball.YPos, Id = ball.Id})
+                .ToList();
+            
+            _holes = new List<EntityOnTheBoard>(b._holes);
 
+            _movements = new Queue<Movement>(b._movements);
+        }
+        
+        public Board()
+        {
+            Init();
+        }
+
+        public Board SearchForSolution(int recursionDepth)
+        {
+            if (_solutionFound || recursionDepth <= 0)
+                return null;
+            
+            recursionDepth--;
+            
             var result = CheckWinLose();
 
-            if (result == true)
+            switch (result)
             {
-                //win, return
+                case true:
+                    _solutionFound = true;
+                    return this;
+                case false:
+                    return null;
             }
 
-            if (result == false)
-            {
-                //lose, return
-            }
+            var movements = Enum.GetValues(typeof(Movement)).Cast<Movement>();
+            
+            List<Board> boardMovementStates = new List<Board>();
             
             foreach (var movement in movements)
             {
-                
+                boardMovementStates.Add(Go(movement));
             }
+            
+            //Analyze board movement states and search for solution inside states
+            foreach (var movementState in boardMovementStates)
+            {
+                var res  = movementState.SearchForSolution(recursionDepth);
+                if (res != null) return res;
+            }
+
+            return null;
         }
 
-        private void InitHoles()
+        private void Init()
         {
             _balls = new List<Ball>
             {
-                new Ball {Id = 0, XPos = 0, YPos = 0},
+                new Ball (BoardSize) {Id = 0, XPos = 0, YPos = 0},
             };
 
             _holes = new List<EntityOnTheBoard>
             {
-                new EntityOnTheBoard {Id = 0, XPos = 1, YPos = 1},
+                new EntityOnTheBoard (BoardSize) {Id = 0, XPos = 1, YPos = 1},
             };
         }
 
-        private bool? Go(Movement movement)
+        private Board Go(Movement movement)
         {
-           
+            var board = new Board(this);
             
-            _movements.Enqueue(movement);
+            board._movements.Enqueue(movement);
 
-            foreach (var ball in _balls)
+            foreach (var ball in board._balls)
             {
                 ball.Go(movement);
             }
 
-            return null;
+            return board;
         }
 
         private bool? CheckWinLose()
@@ -93,6 +125,20 @@ namespace Models
             if (_balls.Count == 0) return true;
 
             return null;
+        }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.AppendLine("Movements:");
+
+            foreach (var move in _movements)
+            {
+                sb.AppendLine(move.ToString());
+            }
+
+            return sb.ToString();
         }
     }
 }

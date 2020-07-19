@@ -4,21 +4,29 @@ namespace Models
 {
     public class Ball : EntityOnTheBoard
     {
+        public Ball(int boardSize) : base(boardSize)
+        {
+        }
+        
         public void Go(Movement movement)
         {
             switch (movement)
             {
                 case Movement.Up:
-                    YPos++;
+                    if(YPos<BoardSize-1)
+                        YPos++;
                     break;
                 case Movement.Down:
-                    YPos--;
+                    if(YPos>0)
+                        YPos--;
                     break;
                 case Movement.Right:
-                    XPos++;
+                    if(XPos<BoardSize-1)
+                        XPos++;
                     break;
                 case Movement.Left:
-                    XPos--;
+                    if(XPos>0)
+                        XPos--;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(movement), movement, null);
