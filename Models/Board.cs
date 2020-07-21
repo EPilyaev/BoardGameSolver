@@ -14,6 +14,13 @@ namespace Models
 
         private readonly Queue<Movement> _movementsMade = new Queue<Movement>();
 
+        private static readonly Movement[] PossibleMovements;
+
+        static Board()
+        {
+            PossibleMovements = Enum.GetValues(typeof(Movement)).Cast<Movement>().ToArray();
+        }
+        
         private Board(Board b)
         {
             _balls = b._balls.Select(ball => new Ball(BoardSize) {XPos = ball.XPos, YPos = ball.YPos, Id = ball.Id})
@@ -22,6 +29,7 @@ namespace Models
             _holes = new List<EntityOnTheBoard>(b._holes);
 
             _movementsMade = new Queue<Movement>(b._movementsMade);
+            
         }
         
         public Board()
@@ -29,6 +37,7 @@ namespace Models
             Init();
         }
 
+        //TODO: move to another class
         public Board SearchForSolution(int recursionDepth)
         {
             var result = CheckWinLose();
@@ -41,15 +50,9 @@ namespace Models
                     return null;
             }
 
-            var movements = Enum.GetValues(typeof(Movement)).Cast<Movement>().ToArray();
-            
             var movementsQueue = new Queue<Board>();
 
-            foreach (var movement in movements)
-            {
-                //Todo: do not enqueue dumb moves
-                movementsQueue.Enqueue(Go(movement));
-            }
+            EnqueueMovements(this, movementsQueue);
 
             while (recursionDepth>0 || movementsQueue.Count>0)
             {
@@ -69,18 +72,23 @@ namespace Models
                 }
                 
                 //Analyze board movement states and search for solution inside states
-                foreach (var movement in movements)
-                {
-                    //Todo: do not enqueue dumb moves
-                    movementsQueue.Enqueue(move.Go(movement));
-                }
+                EnqueueMovements(move, movementsQueue);
 
                 recursionDepth--;
             }
-            
-           
 
             return null;
+        }
+
+        private void EnqueueMovements(Board state, Queue<Board> movementsQueue)
+        {
+            foreach (var movement in PossibleMovements)
+            {
+                var newState = state.Go(movement);
+                
+                if(newState != null)
+                    movementsQueue.Enqueue(newState);
+            }
         }
 
         private void Init()
@@ -98,6 +106,14 @@ namespace Models
 
         private Board Go(Movement movement)
         {
+            if (_movementsMade.Count > 0 )
+            {
+                var lastMove = _movementsMade.Last();
+                
+                if(lastMove.IsOppositeTo(movement))
+                    return null;
+            }
+            
             var board = new Board(this);
             
             board._movementsMade.Enqueue(movement);
@@ -108,7 +124,14 @@ namespace Models
                 ball.Go(movement);
             }
 
-            return board;
+            //check balls moved at all
+            return BallsDidntMove(this, board) ? null : board;
+
+            static bool BallsDidntMove(Board currentState, Board movedState)
+            {
+                return movedState._balls.All(b => 
+                    currentState._balls.Any(thisBall => thisBall.Equals(b)));
+            }
         }
 
         private bool? CheckWinLose()
