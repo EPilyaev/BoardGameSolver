@@ -9,12 +9,12 @@ namespace Models
     {
         private const int BoardSize = 3;
 
-        private List<Ball> _balls;
+        private List<EntityOnTheBoard> _balls;
         private List<EntityOnTheBoard> _holes;
 
         private readonly Queue<Movement> _movementsMade = new Queue<Movement>();
 
-        private static readonly Movement[] PossibleMovements;
+        public static readonly Movement[] PossibleMovements;
 
         static Board()
         {
@@ -23,13 +23,11 @@ namespace Models
         
         private Board(Board b)
         {
-            _balls = b._balls.Select(ball => new Ball(BoardSize) {XPos = ball.XPos, YPos = ball.YPos, Id = ball.Id})
-                .ToList();
-            
-            _holes = new List<EntityOnTheBoard>(b._holes);
+            _balls = b._balls.Select(ball => new EntityOnTheBoard(ball)).ToList();
+            //TODO: Not efficient, clone holes only when ball matches a hole
+            _holes = b._holes.Select(ball => new EntityOnTheBoard(ball)).ToList();
 
             _movementsMade = new Queue<Movement>(b._movementsMade);
-            
         }
         
         public Board()
@@ -37,74 +35,20 @@ namespace Models
             Init();
         }
 
-        //TODO: move to another class
-        public Board SearchForSolution(int recursionDepth)
-        {
-            var result = CheckWinLose();
-
-            switch (result)
-            {
-                case true:
-                    return this;
-                case false:
-                    return null;
-            }
-
-            var movementsQueue = new Queue<Board>();
-
-            EnqueueMovements(this, movementsQueue);
-
-            while (recursionDepth>0 || movementsQueue.Count>0)
-            {
-                var move = movementsQueue.Dequeue();
-
-                var winLose = move.CheckWinLose();
-
-                if (winLose == true)
-                {
-                    return move;
-                }
-
-                if (winLose == false)
-                {
-                    //this move leads to loss, not need to search further
-                    continue;
-                }
-                
-                //Analyze board movement states and search for solution inside states
-                EnqueueMovements(move, movementsQueue);
-
-                recursionDepth--;
-            }
-
-            return null;
-        }
-
-        private void EnqueueMovements(Board state, Queue<Board> movementsQueue)
-        {
-            foreach (var movement in PossibleMovements)
-            {
-                var newState = state.Go(movement);
-                
-                if(newState != null)
-                    movementsQueue.Enqueue(newState);
-            }
-        }
-
         private void Init()
         {
-            _balls = new List<Ball>
+            _balls = new List<EntityOnTheBoard>
             {
-                new Ball (BoardSize) {Id = 0, XPos = 0, YPos = 0},
+                new EntityOnTheBoard (0, 0, 0),
             };
 
             _holes = new List<EntityOnTheBoard>
             {
-                new EntityOnTheBoard (BoardSize) {Id = 0, XPos = 1, YPos = 1},
+                new EntityOnTheBoard (0,1,1),
             };
         }
 
-        private Board Go(Movement movement)
+        public Board Go(Movement movement)
         {
             if (_movementsMade.Count > 0 )
             {
@@ -115,14 +59,7 @@ namespace Models
             }
             
             var board = new Board(this);
-            
-            board._movementsMade.Enqueue(movement);
-
-            foreach (var ball in board._balls)
-            {
-                //Todo: make balls not to go through each other
-                ball.Go(movement);
-            }
+            board.MoveBalls(movement);
 
             //check balls moved at all
             return BallsDidntMove(this, board) ? null : board;
@@ -134,7 +71,67 @@ namespace Models
             }
         }
 
-        private bool? CheckWinLose()
+        private void MoveBalls(Movement movement)
+        {
+            switch (movement)
+            {
+                case Movement.Up:
+                    MoveBallsUp();
+                    break;
+                case Movement.Down:
+                    MoveBallsDown();
+                    break;
+                case Movement.Right:
+                    MoveBallsRight();
+                    break;
+                case Movement.Left:
+                    MoveBallsLeft();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(movement), movement, null);
+            }
+
+            _movementsMade.Enqueue(movement);
+
+            void MoveBallsUp()
+            {
+                foreach (var ball in _balls.OrderByDescending(b => b.YPos))
+                {
+                    if (ball.YPos < BoardSize - 1 && !_balls.Any(b => b.IsDirectlyAbove(ball)))
+                        ball.YPos++;
+                }
+            }
+
+            void MoveBallsDown()
+            {
+                foreach (var ball in _balls.OrderBy(b => b.YPos))
+                {
+                    if (ball.YPos > 0 && !_balls.Any(b => b.IsDirectlyUnder(ball)))
+                        ball.YPos--;
+                }
+            }
+
+            void MoveBallsRight()
+            {
+                foreach (var ball in _balls.OrderByDescending(b=>b.XPos))
+                {
+                    if (ball.XPos < BoardSize - 1 && !_balls.Any(b=>b.IsDirectlyOnTheRightTo(ball)))
+                        ball.XPos++;
+                }
+            }
+
+            void MoveBallsLeft()
+            {
+                foreach (var ball in _balls.OrderBy(b=>b.XPos))
+                {
+                    if (ball.XPos > 0 && !_balls.Any(b=>b.IsDirectlyOnTheLeftTo(ball)))
+                        ball.XPos--;
+                }
+            }
+        }
+
+
+        public bool? CheckWinLose()
         {
             //Check win
             List<int> matchedIds = new List<int>(_balls.Count);

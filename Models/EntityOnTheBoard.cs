@@ -4,34 +4,59 @@ namespace Models
 {
     public class EntityOnTheBoard
     {
-        protected readonly int BoardSize;
-
-        public EntityOnTheBoard(int boardSize)
+        public EntityOnTheBoard(int id, int xPos, int yPos)
         {
-            BoardSize = boardSize;
+            Id = id;
+            XPos = xPos;
+            YPos = yPos;
+        }
+
+        public EntityOnTheBoard(EntityOnTheBoard entityToClone)
+        {
+            Id = entityToClone.Id;
+            XPos = entityToClone.XPos;
+            YPos = entityToClone.YPos;
         }
         
-        public int Id { get; set; }
-        
+        public int Id { get; }
         public int XPos { get; set; }
         public int YPos { get; set; }
-
-        protected bool Equals(EntityOnTheBoard other)
+        
+        public bool IsDirectlyAbove(EntityOnTheBoard other)
         {
-            return Id == other.Id && XPos == other.XPos && YPos == other.YPos;
+            return Id != other.Id && XPos == other.XPos && YPos == other.YPos + 1;
+        }
+        
+        public bool IsDirectlyUnder(EntityOnTheBoard other)
+        {
+            return Id != other.Id && XPos == other.XPos && YPos == other.YPos - 1;
         }
 
+        public bool IsDirectlyOnTheRightTo(EntityOnTheBoard other)
+        {
+            return Id != other.Id && YPos == other.YPos && XPos == other.XPos + 1;
+        }
+        
+        public bool IsDirectlyOnTheLeftTo(EntityOnTheBoard other)
+        {
+            return Id != other.Id && YPos == other.YPos && XPos == other.XPos - 1;
+        }
+        
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((EntityOnTheBoard) obj);
+            return obj.GetType() == GetType() && Equals((EntityOnTheBoard) obj);
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Id, XPos, YPos);
+            return Id.GetHashCode();
+        }
+        
+        private bool Equals(EntityOnTheBoard other)
+        {
+            return Id == other.Id && XPos == other.XPos && YPos == other.YPos;
         }
     }
 }

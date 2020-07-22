@@ -9,9 +9,9 @@ namespace ConsoleApp
         {
             Console.WriteLine("Hello World!");
 
-            var board = new Board();
+            GameSolver gs = new GameSolver();
 
-            var result = board.SearchForSolution(3);
+            var result = gs.SearchForSolution();
             
             Console.WriteLine(result);
             
