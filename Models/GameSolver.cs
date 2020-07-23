@@ -1,37 +1,53 @@
+using System;
 using System.Collections.Generic;
 
 namespace Models
 {
     public class GameSolver
     {
-        private readonly Board _initialState;
+        public Board InitialState { get; }
+
+        private int _overallMoves;
+        public int OverallMoves => _overallMoves;
 
         public GameSolver()
         {
-            _initialState = new Board();
+            InitialState = new Board(10);
+            InitialState.AddBallAndHole(0,0, 2,3);
+            InitialState.AddBallAndHole(7,5, 1,1);
+            InitialState.AddBallAndHole(3,1, 8,9);
         }
 
-        public Board SearchForSolution(int movesLeft = 10_000)
+        public Board SearchForSolution(int movesLeft = 100_000_000)
         {
             var boardStatesQueue = new Queue<Board>();
-            boardStatesQueue.Enqueue(_initialState);
+            boardStatesQueue.Enqueue(InitialState);
 
             while (movesLeft > 0 && boardStatesQueue.Count > 0)
             {
                 var boardState = boardStatesQueue.Dequeue();
 
-                var winLose = boardState.CheckWinLose();
+                var state = boardState.CheckBoardState();
 
-                switch (winLose)
+                switch (state)
                 {
-                    case true:
+                    case GameState.Win:
                         return boardState;
-                    case false:
+                    case GameState.Lose:
                         continue;
-                    default:
+                    case GameState.Neutral:
                         EnqueueMovements(boardState, boardStatesQueue);
                         movesLeft--;
+                        _overallMoves++;
                         break;
+                    case GameState.CloserToWin:
+                        boardStatesQueue.Clear();
+                        EnqueueMovements(boardState, boardStatesQueue);
+                        movesLeft--;
+                        _overallMoves++;
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
             }
 

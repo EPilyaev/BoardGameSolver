@@ -41,6 +41,11 @@ namespace Models
         {
             return Id != other.Id && YPos == other.YPos && XPos == other.XPos - 1;
         }
+
+        public bool OccupiesSamePositionAs(EntityOnTheBoard other)
+        {
+            return XPos == other.XPos && YPos == other.YPos;
+        }
         
         public override bool Equals(object obj)
         {
