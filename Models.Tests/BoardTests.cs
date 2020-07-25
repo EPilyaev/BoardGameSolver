@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -9,10 +7,10 @@ namespace Models.Tests
     public class BoardTests
     {
         [Test]
-        public void StaticCtor_ShouldInitPossibleMovementsToAllMovementsEnumValues()
+        public void StaticCtor_ShouldInitPossibleMovementsToAllAllowedMovements()
         {
             //Arrange
-            var allPossibleMovements = Enum.GetValues(typeof(Movement)).Cast<Movement>().ToArray();
+            var allPossibleMovements = new [] { Movement.Down, Movement.Left, Movement.Right, Movement.Up};
             
             //Act and Assert
             Board.PossibleMovements.Should().BeEquivalentTo(allPossibleMovements);

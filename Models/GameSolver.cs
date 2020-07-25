@@ -18,11 +18,11 @@ namespace Models
             InitialState.AddBallAndHole(3,1, 8,9);
         }
 
-        public Board SearchForSolution(int movesLeft = 100_000_000)
+        public Board SearchForSolution(int movesLeft = 10_000_000)
         {
             var boardStatesQueue = new Queue<Board>();
             boardStatesQueue.Enqueue(InitialState);
-
+            
             while (movesLeft > 0 && boardStatesQueue.Count > 0)
             {
                 var boardState = boardStatesQueue.Dequeue();

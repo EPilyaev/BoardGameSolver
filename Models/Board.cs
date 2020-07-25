@@ -61,7 +61,6 @@ namespace Models
 
         public GameState CheckBoardState()
         {
-            //Check win
             List<int> matchedIds = new List<int>(_balls.Count);
             foreach (var ball in _balls)
             {
